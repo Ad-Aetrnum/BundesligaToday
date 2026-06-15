@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Table Only</title>
+    <style>
+        @font-face {
+            font-family: 'Oswald';
+            src: url('assets/fonts/Oswald.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Inter';
+            src: url('assets/fonts/Inter.ttf') format('truetype');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            width: 1080px;
+            height: 1024px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Фоновая картинка */
+        .bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        /* Полупрозрачный оверлей для читаемости */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1;
+        }
+
+        /* Контент */
+        .content {
+            position: relative;
+            z-index: 2;
+            padding: 40px 50px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Таблица */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            font-family: 'Oswald', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 16px 12px 14px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .table thead th.col-team {
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .table tbody td {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            padding: 11px 12px;
+            text-align: center;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            position: relative;
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tbody tr:nth-child(even) td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .table tbody td.col-team-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            padding-left: 20px;
+        }
+
+        .table tbody td.col-pts {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .table tbody td.col-gd {
+            font-weight: 600;
+        }
+
+        /* Индикатор зоны */
+        .zone-indicator {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .gd-pos { color: #34C759; }
+        .gd-neg { color: #FF3B30; }
+        .gd-zero { color: rgba(255,255,255,0.4); }
+
+        /* Цвета зон */
+        .zone-cl .zone-indicator { background: #4A9EFF; }
+        .zone-el .zone-indicator { background: #34C759; }
+        .zone-ecl .zone-indicator { background: #30D158; }
+        .zone-po .zone-indicator { background: #FF9500; }
+        .zone-rel .zone-indicator { background: #FF3B30; }
+    </style>
+</head>
+<body>
+
+    <img class="bg" src="assets/backgrounds/bg_template2.jpg" alt="">
+    <div class="overlay"></div>
+
+    <div class="content">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width:50px;">#</th>
+                    <th class="col-team" style="width:280px;">Команда</th>
+                    <th style="width:44px;">И</th>
+                    <th style="width:44px;">В</th>
+                    <th style="width:44px;">Н</th>
+                    <th style="width:44px;">П</th>
+                    <th style="width:80px;">МЗ−МЧ</th>
+                    <th style="width:56px;">Р</th>
+                    <th style="width:56px;">О</th>
+                </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const data = window.__DATA__ || {};
+        const teams = data.teams || [];
+
+        const zoneMap = { 'CL': 'zone-cl', 'EL': 'zone-el', 'ECL': 'zone-ecl', 'PO': 'zone-po', 'R': 'zone-rel' };
+
+        const tbody = document.getElementById('rows');
+        teams.forEach(team => {
+            const zc = zoneMap[team.zone] || '';
+            const gdClass = team.gd > 0 ? 'gd-pos' : team.gd < 0 ? 'gd-neg' : 'gd-zero';
+
+            const tr = document.createElement('tr');
+            tr.className = zc;
+            tr.innerHTML = `
+                <td><span class="zone-indicator"></span>${team.pos}</td>
+                <td class="col-team-name">${team.name}</td>
+                <td>${team.games}</td>
+                <td>${team.w}</td>
+                <td>${team.d}</td>
+                <td>${team.l}</td>
+                <td>${team.gf}−${team.ga}</td>
+                <td class="col-gd ${gdClass}">${team.gd > 0 ? '+' : ''}${team.gd}</td>
+                <td class="col-pts">${team.pts}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    </script>
+</body>
+</html>

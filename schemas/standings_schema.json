@@ -1,0 +1,38 @@
+
+{
+  "type": "object",
+  "properties": {
+    "season": {
+      "type": "string",
+      "description": "Season identifier, e.g., \"2025/26\""
+    },
+    "issue": {
+      "type": "integer",
+      "description": "Issue number of the publication"
+    },
+    "matchday": {
+      "type": "integer",
+      "description": "Current matchday"
+    },
+    "table": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "position": {"type": "integer"},
+          "club_name": {"type": "string"},
+          "club_logo_url": {"type": "string", "format": "url"},
+          "mp": {"type": "integer"},
+          "w": {"type": "integer"},
+          "d": {"type": "integer"},
+          "l": {"type": "integer"},
+          "gf": {"type": "integer"},
+          "ga": {"type": "integer"},
+          "pts": {"type": "integer"}
+        },
+        "required": ["position", "club_name", "club_logo_url", "mp", "w", "d", "l", "gf", "ga", "pts"]
+      }
+    }
+  },
+  "required": ["season", "issue", "matchday", "table"]
+}

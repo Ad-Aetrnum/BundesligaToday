@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Bundesliga Today</title>
+    <style>
+        @font-face {
+            font-family: 'Bebas Neue';
+            src: url('assets/fonts/BebasNeue.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Inter';
+            src: url('assets/fonts/Inter.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Oswald';
+            src: url('assets/fonts/Oswald.ttf') format('truetype');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            width: 1280px;
+            height: 1024px;
+            overflow: hidden;
+            position: relative;
+            background: #0b0f14;
+        }
+
+        .bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 0;
+        }
+
+        /* ── Шапка (y: 0-350) ── */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 80px;
+            letter-spacing: 8px;
+            color: #D20515;
+            text-shadow: 0 0 60px rgba(210, 5, 21, 0.5), 3px 3px 0 rgba(0,0,0,0.4);
+        }
+        .header .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 12px;
+        }
+        .header .line {
+            width: 240px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #D20515, transparent);
+            margin-top: 20px;
+        }
+
+        /* ── Таблица (y: 0-850) ── */
+        .table-wrap {
+            position: absolute;
+            top: 0;
+            left: 30px;
+            right: 30px;
+            height: 850px;
+            z-index: 2;
+        }
+
+        .table-box {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(10px);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+        }
+        .table-sub {
+            font-family: Georgia, serif;
+            font-size: 13px;
+            font-style: italic;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 16px;
+        }
+
+        /* Заголовки колонок */
+        .grid-head {
+            display: grid;
+            grid-template-columns: 50px 1fr 48px 48px 48px 48px 96px 60px 60px;
+            gap: 0;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+        .grid-head span {
+            font-family: 'Oswald', sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.45);
+            text-align: center;
+        }
+        .grid-head .col-h-team { text-align: left; padding-left: 14px; }
+
+        /* Строки */
+        .grid-rows {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 48px 48px 48px 48px 96px 60px 60px;
+            gap: 0;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            align-items: center;
+            position: relative;
+        }
+        .grid-row:last-child { border-bottom: none; }
+        .grid-row:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+        .grid-row > span {
+            font-family: 'Oswald', sans-serif;
+            font-size: 16px;
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+        }
+        .grid-row > span.col-r-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            padding-left: 14px;
+            color: #fff;
+        }
+        .grid-row > span.col-r-pts {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .grid-row > span.col-r-gd { font-weight: 600; }
+
+        /* Индикатор зоны */
+        .zone-bar {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .gd-pos { color: #34C759 !important; }
+        .gd-neg { color: #FF3B30 !important; }
+        .gd-zero { color: rgba(255,255,255,0.35) !important; }
+
+        /* Легенда */
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            justify-content: center;
+        }
+        .leg-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+        }
+        .leg-dot {
+            width: 9px; height: 9px;
+            border-radius: 2px;
+        }
+
+        /* ── Футер (y: 850-900) ── */
+        .footer {
+            position: absolute;
+            top: 850px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <img class="bg" src="assets/backgrounds/target_style.jpg" alt="">
+
+    <!-- Таблица -->
+    <div class="table-wrap">
+        <div class="table-box">
+            <div class="table-title">Турнирная таблица</div>
+            <div class="table-sub">Сезон 2025/26</div>
+
+            <div class="grid-head">
+                <span>#</span>
+                <span class="col-h-team">Команда</span>
+                <span>И</span>
+                <span>В</span>
+                <span>Н</span>
+                <span>П</span>
+                <span>МЗ−МЧ</span>
+                <span>Р</span>
+                <span>О</span>
+            </div>
+
+            <div class="grid-rows" id="rows"></div>
+
+            <div class="legend">
+                <div class="leg-item"><div class="leg-dot" style="background:#4A9EFF;"></div>Лига Чемпионов</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#34C759;"></div>Лига Европы</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#30D158;"></div>Конференц-Лига</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#FF9500;"></div>Плей-офф</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#FF3B30;"></div>Вылет</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <div class="footer">@BLTD_bot • Bundesliga Today • 2026</div>
+
+    <script>
+        const data = window.__DATA__ || {};
+        const teams = data.teams || [];
+        const zoneBar = {'CL':'#4A9EFF','EL':'#34C759','ECL':'#30D158','PO':'#FF9500','R':'#FF3B30'};
+        const zonePos = {'CL':'#4A9EFF','EL':'#34C759','ECL':'#30D158','PO':'#FF9500','R':'#FF3B30'};
+
+        const tbody = document.getElementById('rows');
+        teams.forEach(team => {
+            const bar = zoneBar[team.zone] || 'transparent';
+            const pc = zonePos[team.zone] || 'rgba(255,255,255,0.8)';
+            const gd = team.gd > 0 ? 'gd-pos' : team.gd < 0 ? 'gd-neg' : 'gd-zero';
+
+            const row = document.createElement('div');
+            row.className = 'grid-row';
+            row.innerHTML = `
+                <div class="zone-bar" style="background:${bar};"></div>
+                <span style="color:${pc};">${team.pos}</span>
+                <span class="col-r-name">${team.name}</span>
+                <span>${team.games}</span>
+                <span>${team.w}</span>
+                <span>${team.d}</span>
+                <span>${team.l}</span>
+                <span style="color:rgba(255,255,255,0.4);">${team.gf}−${team.ga}</span>
+                <span class="col-r-gd ${gd}">${team.gd > 0 ? '+' : ''}${team.gd}</span>
+                <span class="col-r-pts" style="color:${pc};">${team.pts}</span>
+            `;
+            tbody.appendChild(row);
+        });
+    </script>
+</body>
+</html>
