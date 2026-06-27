@@ -79,8 +79,8 @@ async def _fetch_top_scorers(season: str = "2025", limit: int = 10) -> list[dict
         return scorers
 
 
-def generate_tour_image(season: str = "2025-26") -> str:
-    """Generate tour image (standings + matchday + top scorers), overwriting the previous one.
+async def generate_tour_image(season: str = "2025-26") -> str:
+    """Генерирует финальное изображение тура и возвращает путь.
 
     Returns:
         Path to the generated PNG file.
@@ -114,8 +114,8 @@ def generate_tour_image(season: str = "2025-26") -> str:
 
     # Fetch real data from API
     api_season = season.split("-")[0]  # "2025-26" -> "2025"
-    matchday_results = asyncio.run(_fetch_matchday_results(api_season))
-    top_scorers = asyncio.run(_fetch_top_scorers(api_season))
+    matchday_results = await _fetch_matchday_results(api_season)
+    top_scorers = await _fetch_top_scorers(api_season)
 
     matchday = table[0]["mp"] if table else "?"
 

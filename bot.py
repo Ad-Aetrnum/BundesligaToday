@@ -391,6 +391,15 @@ async def cb_club_news(callback: CallbackQuery):
         await callback.answer("⚠️ Ошибка загрузки новостей", show_alert=True)
 
 
+def fmt_squad_line(num, name, nationality):
+    """Форматирует строку игрока без Markdown."""
+    if num:
+        num_str = f"#{num}"
+    else:
+        num_str = "#—"
+    return f"  {num_str} {name} ({nationality})"
+
+
 @router.callback_query(F.data.startswith("club_squad:"))
 async def cb_club_squad(callback: CallbackQuery):
     """Состав клуба из БД."""
@@ -398,42 +407,35 @@ async def cb_club_squad(callback: CallbackQuery):
         club_name = callback.data.split(":", 1)[1]
         emoji = club_emoji(club_name)
         squad = get_squad(club_name)
-        
+
         if not squad["total"]:
-            text = f"{emoji} *{club_name}*\n\n👥 _Состав пока не заполнен_"
+            text = f"{emoji} {club_name}\n\n👥 Состав пока не заполнен"
         else:
-            lines = [f"{emoji} *{club_name}* — 👥 Состав\n"]
-            lines.append(f"👤 Всего: {squad['total']} | 🌍 Легионеров: {squad['foreigners']}\n")
-            
+            lines = [f"{emoji} {club_name} — 👥 Состав"]
+            lines.append(f"👤 Всего: {squad['total']} | 🌍 Легионеров: {squad['foreigners']}")
+
             if squad["gk"]:
-                lines.append("🧤 *Вратари:*")
+                lines.append("\n🧤 Вратари:")
                 for p in squad["gk"]:
-                    num = f"#{p['number']}" if p['number'] else "#—"
-                    lines.append(f"  {num} {p['name']} ({p['nationality']})")
-                lines.append("")
-            
+                    lines.append(fmt_squad_line(p.get("number"), p.get("name", ""), p.get("nationality", "")))
+
             if squad["df"]:
-                lines.append("🛡️ *Защитники:*")
+                lines.append("\n🛡️ Защитники:")
                 for p in squad["df"]:
-                    num = f"#{p['number']}" if p['number'] else "#—"
-                    lines.append(f"  {num} {p['name']} ({p['nationality']})")
-                lines.append("")
-            
+                    lines.append(fmt_squad_line(p.get("number"), p.get("name", ""), p.get("nationality", "")))
+
             if squad["mf"]:
-                lines.append("⚡ *Полузащитники:*")
+                lines.append("\n⚡ Полузащитники:")
                 for p in squad["mf"]:
-                    num = f"#{p['number']}" if p['number'] else "#—"
-                    lines.append(f"  {num} {p['name']} ({p['nationality']})")
-                lines.append("")
-            
+                    lines.append(fmt_squad_line(p.get("number"), p.get("name", ""), p.get("nationality", "")))
+
             if squad["fw"]:
-                lines.append("⚽ *Нападающие:*")
+                lines.append("\n⚽ Нападающие:")
                 for p in squad["fw"]:
-                    num = f"#{p['number']}" if p['number'] else "#—"
-                    lines.append(f"  {num} {p['name']} ({p['nationality']})")
-            
+                    lines.append(fmt_squad_line(p.get("number"), p.get("name", ""), p.get("nationality", "")))
+
             text = "\n".join(lines)
-        
+
         await callback.message.edit_text(
             text,
             reply_markup=club_page_kb(club_name),
@@ -878,9 +880,7 @@ async def table_updater():
     while True:
         try:
             logger.info("Table updater: generating standings image...")
-            # Запускаем синхронную генерацию в отдельном потоке
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(None, generate_tour_image)
+            result = await generate_tour_image()
             logger.info("Table updater: generated %s", result)
         except Exception as e:
             logger.error("Table updater error: %s", e)
@@ -912,7 +912,7 @@ async def cmd_table_refresh(message: Message):
         return
     msg = await message.answer("⏳ Генерирую таблицу...")
     try:
-        result = generate_tour_image()
+        result = await generate_tour_image()
         await msg.edit_text(f"✅ Таблица обновлена: `{result}`")
     except Exception as e:
         logger.error("table_refresh error: %s", e)
