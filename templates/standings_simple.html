@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bundesliga Standings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            width: 900px;
+            background: #ffffff;
+            font-family: 'Oswald', 'Inter', Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 3px;
+            color: #000;
+        }
+        .header .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            font-family: 'Oswald', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: #000;
+            text-align: left;
+            padding: 8px 6px;
+            border-bottom: 2px solid #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        thead th:last-child {
+            text-align: right;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tbody tr:last-child { border-bottom: none; }
+
+        tbody td {
+            padding: 8px 6px;
+            font-size: 14px;
+            color: #000;
+            vertical-align: middle;
+        }
+        .col-pos {
+            width: 30px;
+            text-align: center;
+            font-weight: 700;
+            font-family: 'Oswald', sans-serif;
+        }
+        .col-club {
+            font-weight: 600;
+        }
+        .col-num {
+            font-family: 'Oswald', sans-serif;
+            text-align: center;
+            font-size: 13px;
+            color: #333;
+        }
+        .col-pts {
+            font-weight: 700;
+            font-family: 'Oswald', sans-serif;
+            font-size: 15px;
+            text-align: right;
+        }
+
+        .zone-cl { border-left: 3px solid #FFD700; }
+        .zone-el { border-left: 3px solid #00AA55; }
+        .zone-relegation { border-left: 3px solid #CC0000; }
+        .zone-neutral { border-left: 3px solid transparent; }
+
+        .footer {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #999;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>BUNDESLIGA</h1>
+        <div class="subtitle">Season {{ season }} — Matchday {{ matchday }}</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-pos">#</th>
+                <th>Club</th>
+                <th>MP</th>
+                <th>W</th>
+                <th>D</th>
+                <th>L</th>
+                <th>GF</th>
+                <th>GA</th>
+                <th style="text-align:right">PTS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table %}
+            <tr class="{{ row.zone }}">
+                <td class="col-pos">{{ row.position }}</td>
+                <td class="col-club">{{ row.club_name }}</td>
+                <td class="col-num">{{ row.mp }}</td>
+                <td class="col-num">{{ row.w }}</td>
+                <td class="col-num">{{ row.d }}</td>
+                <td class="col-num">{{ row.l }}</td>
+                <td class="col-num">{{ row.gf }}</td>
+                <td class="col-num">{{ row.ga }}</td>
+                <td class="col-pts">{{ row.pts }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Bundesliga Today — Updated after Matchday {{ matchday }}
+    </div>
+</body>
+</html>

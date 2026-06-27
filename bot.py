@@ -18,7 +18,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 from config import (
-    BOT_TOKEN, ADMIN_IDS, CHANNEL_ID, GROUP_ID,
+    BUNDESLIGA_BOT_TOKEN as BOT_TOKEN, ADMIN_IDS, CHANNEL_ID, GROUP_ID,
     PREMIUM_COST, BUNDESLIGA_NEWS, CLUB_TOPIC_NAMES,
 )
 from database import (init_db, get_db, get_all_clubs, get_club, get_featured_clubs,
@@ -26,6 +26,7 @@ from database import (init_db, get_db, get_all_clubs, get_club, get_featured_clu
                      get_squad, get_coach, save_news, cleanup_news)
 from parsers import get_table_formatted, get_matchday_formatted
 from news_parser import fetch_all_news, fetch_all_news_sync
+from table_generator import generate_tour_image, OUTPUT_PATH
 
 # ── Логирование ─────────────────────────────────────────────────
 
@@ -211,54 +212,22 @@ async def cmd_matchday(message: Message):
 
 @router.callback_query(F.data == "table")
 async def cb_table(callback: CallbackQuery):
-    await callback.answer("Загружаю...")
+    await callback.answer()
     try:
-        # Генерируем картинку через новый движок
-        from renderer.engine import render
-        from database import get_season_standings
-        from pathlib import Path
-
-        standings = get_season_standings("2025-26")
-        if not standings:
-            await callback.message.edit_text("⚠️ Данные таблицы не найдены.")
-            return
-
-        teams = []
-        for row in standings:
-            pos = row["position"]
-            zone = row.get("zone", "")
-            zone_code = {"ЛЧ": "CL", "ЛЕ": "EL", "ЛКК": "ECL", "Плей-офф": "PO", "Вылет": "R"}.get(zone, "")
-            teams.append({
-                "pos": pos, "name": row["team_name_de"],
-                "games": row["games_played"], "w": row["wins"], "d": row["draws"], "l": row["losses"],
-                "gf": row["goals_for"], "ga": row["goals_against"],
-                "gd": row["goal_difference"], "pts": row["points"], "zone": zone_code,
-            })
-
-        data = {"league": "Bundesliga", "season": "2025/26", "title": "Турнирная таблица", "teams": teams}
-
-        output_dir = Path(__file__).parent / "output"
-        output_dir.mkdir(exist_ok=True)
-        out_path = str(output_dir / "table_2025-26.png")
-
-        result = render("standings", data, "table_2025-26")
-        if result and os.path.exists(result):
-            await callback.message.delete()
-            with open(result, "rb") as f:
-                await bot.send_photo(
-                    chat_id=callback.message.chat.id,
-                    photo=f,
-                    caption="📊 *Таблица Бундеслиги 2025/26* _(итоги сезона)_",
-                    parse_mode="Markdown"
-                )
+        from table_generator import OUTPUT_PATH
+        if OUTPUT_PATH.exists():
+            await bot.send_photo(
+                chat_id=callback.message.chat.id,
+                photo=FSInputFile(str(OUTPUT_PATH)),
+                caption="📊 *Таблица Бундеслиги 2025/26*",
+                parse_mode="Markdown",
+                reply_markup=main_menu_kb(),
+            )
         else:
-            await callback.message.edit_text("⚠️ Ошибка генерации таблицы.")
+            await callback.message.edit_text("⏳ Таблица ещё не сгенерирована. Подождите немного.")
     except Exception as e:
         logger.error("cb_table error: %s", e)
-        try:
-            await callback.message.edit_text("⚠️ Ошибка загрузки таблицы.")
-        except Exception:
-            await callback.answer("⚠️ Ошибка")
+        await callback.answer("⚠️ Ошибка загрузки таблицы", show_alert=True)
 
 
 @router.callback_query(F.data == "matchday")
@@ -903,6 +872,21 @@ async def news_updater():
         await asyncio.sleep(1800)  # 30 минут
 
 
+async def table_updater():
+    """Фоновая задача: обновление картинки таблицы каждые 60 минут."""
+    await asyncio.sleep(15)  # даём боту запуститься
+    while True:
+        try:
+            logger.info("Table updater: generating standings image...")
+            # Запускаем синхронную генерацию в отдельном потоке
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, generate_tour_image)
+            logger.info("Table updater: generated %s", result)
+        except Exception as e:
+            logger.error("Table updater error: %s", e)
+        await asyncio.sleep(3600)  # 60 минут
+
+
 @router.message(Command("news_refresh"))
 async def cmd_news_refresh(message: Message):
     """Принудительное обновление новостей (только админ)."""
@@ -921,13 +905,25 @@ async def cmd_news_refresh(message: Message):
         await msg.edit_text(f"❌ Ошибка: {e}")
 
 
-# ── Запуск ──────────────────────────────────────────────────────
+@router.message(Command("table_refresh"))
+async def cmd_table_refresh(message: Message):
+    """Принудительная перегенерация таблицы (только админ)."""
+    if message.from_user.id not in ADMIN_IDS:
+        return
+    msg = await message.answer("⏳ Генерирую таблицу...")
+    try:
+        result = generate_tour_image()
+        await msg.edit_text(f"✅ Таблица обновлена: `{result}`")
+    except Exception as e:
+        logger.error("table_refresh error: %s", e)
+        await msg.edit_text(f"❌ Ошибка: {e}")
 
 async def main():
     init_db()
     logger.info("Bundesliga Today Bot starting...")
-    # Запускаем фоновое обновление новостей
+    # Запускаем фоновое обновление новостей и таблицы
     asyncio.create_task(news_updater())
+    asyncio.create_task(table_updater())
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(
         bot,

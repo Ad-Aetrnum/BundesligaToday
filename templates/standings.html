@@ -3,10 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Bundesliga Standings</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'Bebas Neue';
+            src: url('../assets/fonts/BebasNeue.ttf') format('truetype');
+            font-weight: 400;
+        }
+        @font-face {
+            font-family: 'Inter';
+            src: url('../assets/fonts/Inter.ttf') format('truetype');
+            font-weight: 400 700;
+        }
+        @font-face {
+            font-family: 'Oswald';
+            src: url('../assets/fonts/Oswald.ttf') format('truetype');
+            font-weight: 400 700;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -17,7 +30,6 @@
             position: relative;
         }
 
-        /* Контейнер таблицы — точно в рабочей зоне */
         .standings {
             position: absolute;
             left: 307px;
@@ -28,7 +40,6 @@
             overflow: hidden;
         }
 
-        /* ── Шапка таблицы ── */
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -48,7 +59,6 @@
             color: rgba(0,0,0,0.55);
         }
 
-        /* ── Таблица ── */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -88,13 +98,6 @@
             gap: 6px;
             font-weight: 600;
         }
-        .col-club .logo {
-            width: 18px; height: 18px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
         .col-num {
             font-family: 'Oswald', sans-serif;
             text-align: center;
@@ -108,13 +111,11 @@
             color: #000000;
         }
 
-        /* Зоны */
         .zone-cl       { border-left: 3px solid #FFD700; }
         .zone-el       { border-left: 3px solid #00FF78; }
         .zone-relegation { border-left: 3px solid #FF3C3C; }
         .zone-neutral  { border-left: 3px solid rgba(0,0,0,0.06); }
 
-        /* ── Футер ── */
         .card-footer {
             padding-top: 8px;
             font-size: 10px;
@@ -148,10 +149,7 @@
                 {% for row in table %}
                 <tr class="{{ row.zone }}">
                     <td class="col-rank">{{ row.position }}</td>
-                    <td class="col-club">
-                        <div class="logo" style="background-image: url('{{ row.club_logo_url }}');"></div>
-                        {{ row.club_name }}
-                    </td>
+                    <td class="col-club">{{ row.club_name }}</td>
                     <td class="col-num">{{ row.mp }}</td>
                     <td class="col-num">{{ row.w }}</td>
                     <td class="col-num">{{ row.d }}</td>
