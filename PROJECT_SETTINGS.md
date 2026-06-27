@@ -99,10 +99,27 @@ Key entries:
 - `table_generator.py`: Fetches data from football-data.org API, calls `render_full()`, saves `output/bl_today.png`
 - `Bundesliga_tour.py`: Pillow renderer (ST + MR + TS)
 - `render_cup.py`: DFB-Pokal cup draw renderer
-- Button "📊 Таблица" sends pre-generated `bl_today.png` instantly
-- `table_updater()`: regenerates every 60 minutes
-- `/table_refresh`: admin forced regeneration
-- `/news_refresh`: admin forced news update
+
+### Commands
+- `/start` — welcome + main menu
+- `/menu` — show club pages
+- `/table` — show current standings table (sends bl_today.png)
+- `/matchday` — show latest matchday results
+- `/admin` — admin panel
+- `/news_refresh` — force news refresh (admin only)
+- `/table_refresh` — force table image regeneration (admin only)
+
+### Inline Buttons
+- Club page → 📰 Новости, 📋 Информация, 👥 Состав, 📅 Матчи, 📈 Статистика, 🏆 Достижения, 🔔 Подписаться
+- 📊 Таблица — sends pre-generated `bl_today.png` instantly
+
+### Key Implementation Notes
+- Club squad text: NO Markdown formatting (causes "can't parse entities" errors with | and brackets)
+- `generate_tour_image()` is async — must be awaited, not called with asyncio.run()
+- Club names stored in DB as `[FCB] FC Bayern München | Бавария`
+- Shortened via `shorten_tour()` for tour table, `SHORTEN` dict for cup draw
+- Only ONE bot instance must be running per token (TelegramConflictError otherwise)
+- Use `BufferedInputFile` for sending photos (not FSInputFile or MEDIA: prefix)
 
 ## API
 - football-data.org (FOOTBALL_DATA_API_KEY in .env)
