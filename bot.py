@@ -23,7 +23,7 @@ from config import (
 )
 from database import (init_db, get_db, get_all_clubs, get_club, get_featured_clubs,
                      get_trophies, get_news as db_get_news, get_club_news as db_get_club_news,
-                     get_squad, get_coach, save_news, cleanup_news)
+                     get_squad, get_coach, get_season_standings, save_news, cleanup_news)
 from parsers import get_table_formatted, get_matchday_formatted
 from news_parser import fetch_all_news, fetch_all_news_sync
 from table_generator import generate_tour_image, OUTPUT_PATH
@@ -322,7 +322,15 @@ async def cb_club_info(callback: CallbackQuery):
         capacity = c.get("capacity", "—")
         short = c.get("short_name", "—")
         founded = c.get("founded", "—")
-        
+        team_api_id = c.get("team_api_id", "—")
+
+        # Извлекаем немецкое имя клуба из формата [ABBR] German Name | Russian
+        club_name_de = c["name"]
+        if "|" in club_name_de:
+            club_name_de = club_name_de.split("|")[0].strip()
+        if "] " in club_name_de:
+            club_name_de = club_name_de.split("] ")[-1].strip()
+
         # Получаем тренера
         coach = get_coach(club_name)
         coach_line = ""
@@ -334,20 +342,67 @@ async def cb_club_info(callback: CallbackQuery):
                 coach_display += f" ({coach_age} лет)"
             coach_line = f"👔 Тренер: {coach_display}\n"
 
+        # Получаем трофеи
+        t = get_trophies(club_name)
+        trophies_line = ""
+        if t:
+            bl_titles = t.get("bl_titles", 0) or 0
+            dfb_pokals = t.get("dfb_pokals", 0) or 0
+            cl = t.get("champions_league", 0) or 0
+            el = t.get("europa_league", 0) or 0
+            ecl = t.get("conference_league", 0) or 0
+            total_trophies = bl_titles + dfb_pokals + cl + el + ecl
+            trophies_line = f"\n🏆 Трофеев: {total_trophies}\n"
+            if bl_titles:
+                trophies_line += f"  🥇 Бундеслига: {bl_titles}x\n"
+            if dfb_pokals:
+                trophies_line += f"  🏆 DFB-Pokal: {dfb_pokals}x\n"
+            if cl:
+                trophies_line += f"  ⭐ Лига Чемпионов: {cl}x\n"
+            if el:
+                trophies_line += f"  🌍 Лига Европы: {el}x\n"
+            if ecl:
+                trophies_line += f"  🌐 Лига Конференций: {ecl}x\n"
+        else:
+            trophies_line = "\n🏆 Трофеев: данных нет\n"
+
+        # Получаем текущую позицию в таблице
+        standings = get_season_standings("2025-26")
+        position_line = ""
+        for s in standings:
+            if s.get("team_name_de") == club_name_de:
+                pos = s.get("position", "—")
+                pts = s.get("points", "—")
+                w = s.get("wins", "—")
+                d = s.get("draws", "—")
+                l = s.get("losses", "—")
+                gf = s.get("goals_for", "—")
+                ga = s.get("goals_against", "—")
+                zone = s.get("zone", "")
+                zone_str = f" ({zone})" if zone else ""
+                position_line = (
+                    f"\n📊 Сезон 2025/26\n"
+                    f"  📍 Место: {pos}{zone_str}\n"
+                    f"  ✅ Побед: {w} | 🤝 Ничьих: {d} | ❌ Поражений: {l}\n"
+                    f"  ⚽ Мячи: {gf}-{ga}\n"
+                    f"  🏅 Очки: {pts}\n"
+                )
+                break
+        if not position_line:
+            position_line = "\n📊 Сезон 2025/26: данных нет\n"
+
         text = (
-            f"{emoji} *{c['name']}*\n\n"
+            f"{emoji} {c['name']}\n\n"
             f"🏙️ Город: {city}\n"
             f"📅 Основан: {founded}\n"
             f"🏟️ Стадион: {stadium}\n"
             f"👥 Вместимость: {capacity:,}\n"
             f"🔤 Сокращение: {short}\n"
-            f"{coach_line}\n"
-            f"📊 *Сезон 2025/26*\n"
-            f"🏆 Бундеслига: _загрузка..._\n"
-            f"🏆 DFB-Pokal: _загрузка..._\n"
-            f"🏆 Еврокубки: _уточняется_\n"
+            f"{coach_line}"
+            f"{trophies_line}"
+            f"{position_line}"
         )
-        await callback.message.edit_text(text, reply_markup=club_page_kb(club_name))
+        await callback.message.edit_text(text, reply_markup=club_page_kb(club_name), parse_mode=None)
         await callback.answer()
     except Exception as e:
         logger.error("cb_club_info error: %s", e)
