@@ -454,7 +454,7 @@ async def cb_club_trophies(callback: CallbackQuery):
         emoji = club_emoji(club_name)
         t = get_trophies(club_name)
 
-        text = f"{emoji} *{club_name}* — 🏆 Достижения\n\n"
+        text = f"{emoji} {club_name} — 🏆 Достижения\n\n"
 
         if t:
             bl_titles = t.get("bl_titles", 0) or 0
@@ -470,39 +470,39 @@ async def cb_club_trophies(callback: CallbackQuery):
             super_cups = t.get("super_cups", 0) or 0
 
             if bl_titles:
-                text += f"🥇 *Чемпион Германии*: {bl_titles}x"
+                text += f"🥇 Чемпион Германии: {bl_titles}x"
                 if bl_last:
                     text += f" (последний: {bl_last})"
                 text += "\n"
             if dfb_pokals:
-                text += f"🏆 *DFB-Pokal*: {dfb_pokals}x"
+                text += f"🏆 DFB-Pokal: {dfb_pokals}x"
                 if dfb_pokal_last:
                     text += f" (последний: {dfb_pokal_last})"
                 text += "\n"
             if cl:
-                text += f"⭐ *Лига Чемпионов*: {cl}x"
+                text += f"⭐ Лига Чемпионов: {cl}x"
                 if cl_last:
                     text += f" (последний: {cl_last})"
                 text += "\n"
             if el:
-                text += f"🌍 *Лига Европы*: {el}x"
+                text += f"🌍 Лига Европы: {el}x"
                 if el_last:
                     text += f" (последний: {el_last})"
                 text += "\n"
             if ecl:
-                text += f"🌐 *Лига Конференций*: {ecl}x"
+                text += f"🌐 Лига Конференций: {ecl}x"
                 if ecl_last:
                     text += f" (последний: {ecl_last})"
                 text += "\n"
             if super_cups:
-                text += f"🏅 *Суперкубок*: {super_cups}x\n"
+                text += f"🏅 Суперкубок: {super_cups}x\n"
 
             if not any([bl_titles, dfb_pokals, cl, el, ecl, super_cups]):
-                text += "_Пока нет крупных достижений_\n"
+                text += "Пока нет крупных достижений\n"
         else:
-            text += "_Данные о достижениях не найдены_\n"
+            text += "Данные о достижениях не найдены\n"
 
-        await callback.message.edit_text(text, reply_markup=club_page_kb(club_name))
+        await callback.message.edit_text(text, reply_markup=club_page_kb(club_name), parse_mode=None)
         await callback.answer()
     except Exception as e:
         logger.error("cb_club_trophies error: %s", e)
