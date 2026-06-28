@@ -23,7 +23,7 @@ from config import (
 )
 from database import (init_db, get_db, get_all_clubs, get_club, get_featured_clubs,
                      get_trophies, get_news as db_get_news, get_club_news as db_get_club_news,
-                     get_squad, get_coach, get_season_standings, save_news, cleanup_news)
+                     get_squad, get_coach, get_season_standings, get_friendlies, save_news, cleanup_news)
 from parsers import get_table_formatted, get_matchday_formatted
 from news_parser import fetch_all_news, fetch_all_news_sync
 from table_generator import generate_tour_image, OUTPUT_PATH
@@ -566,17 +566,25 @@ async def cb_club_trophies(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("club_matches:"))
 async def cb_club_matches(callback: CallbackQuery):
+    """Товарищеские матчи клуба из БД."""
     try:
         club_name = callback.data.split(":", 1)[1]
         emoji = club_emoji(club_name)
-        await callback.message.edit_text(
-            f"{emoji} *{club_name}*\n\n"
-            f"📅 Расписание матчей\n\n"
-            f"*Раздел в разработке*\n\n"
-            f"Скоро здесь будет:\n"
-            f"• Все матчи клуба в сезоне\n• Результаты\n• Статистика по матчам",
-            reply_markup=club_page_kb(club_name),
-        )
+        matches = get_friendlies(club_name, limit=10)
+
+        if not matches:
+            text = f"{emoji} {club_name}\n\n📅 Товарищеские матчи\n\nПока нет информации о товарищеских матчах.\n\nОбычно клубы публикуют расписание в июне-июле перед стартом сезона."
+        else:
+            lines = [f"{emoji} {club_name} — 📅 Товарищеские матчи\n"]
+            for m in matches:
+                date = m.get("match_date", "—")
+                opponent = m.get("opponent", "—")
+                venue = m.get("venue", "")
+                venue_str = f" | {venue}" if venue else ""
+                lines.append(f"  📆 {date} vs {opponent}{venue_str}")
+            text = "\n".join(lines)
+
+        await callback.message.edit_text(text, reply_markup=club_page_kb(club_name), parse_mode=None)
         await callback.answer()
     except Exception as e:
         logger.error("cb_club_matches error: %s", e)

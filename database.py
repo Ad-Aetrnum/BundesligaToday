@@ -398,6 +398,29 @@ def get_season_standings(season: str = "2025-26") -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def get_friendlies(club_name: str, limit: int = 10) -> list[dict]:
+    """Возвращает товарищеские матчи клуба из БД.
+    Поддерживает как чистые имена (FC Bayern München), так и формат [FCB] FC Bayern München | Бавария.
+    """
+    db = get_db()
+    # Если передан формат [ABBR] Name | Russian — извлекаем немецкое имя
+    search_name = club_name
+    if "|" in search_name:
+        search_name = search_name.split("|")[0].strip()
+    if "] " in search_name:
+        search_name = search_name.split("] ")[-1].strip()
+    
+    rows = db.execute(
+        """SELECT * FROM friendlies 
+           WHERE club_name = ? OR club_name LIKE ?
+           ORDER BY match_date ASC 
+           LIMIT ?""",
+        (search_name, search_name + "%", limit)
+    ).fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
 # ── Функции для работы с новостями ──
 
 def translate_news_item(item: dict) -> dict:
